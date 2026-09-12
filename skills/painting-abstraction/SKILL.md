@@ -1,6 +1,6 @@
 ---
 name: painting-abstraction
-description: تحويل اللوحات والصور إلى فن تجريدي (تجريد اللوحات) بستة أساليب مع إخراج PNG أو PDF. استخدم هذه المهارة عندما يطلب المستخدم تجريد لوحة، تحويل صورة إلى فن تجريدي، طابع تكعيبي أو تعبيري أو هندسي لصورة، أو تنويعات تجريدية من لوحته. Use when asked to abstract a painting, convert an image to abstract art, or apply cubist, geometric, expressionist, color-field, low-poly, or flow abstraction effects.
+description: تحويل اللوحات والصور إلى فن تجريدي (تجريد اللوحات) بسبعة أساليب مع إخراج PNG أو PDF. استخدم هذه المهارة عندما يطلب المستخدم تجريد لوحة، تحويل صورة إلى فن تجريدي، طابع تكعيبي أو تعبيري أو هندسي أو مُسطَّحي لصورة، أو تنويعات تجريدية من لوحته. Use when asked to abstract a painting, convert an image to abstract art, or apply cubist, geometric, expressionist, color-field, low-poly, faceted, or flow abstraction effects.
 license: Complete terms in LICENSE.txt
 ---
 
@@ -18,7 +18,7 @@ license: Complete terms in LICENSE.txt
 تحتاج إلى ثلاثة عناصر — اسأل المستخدم عن الناقص منها فقط:
 
 - **الصورة الأصلية**: مسار ملف يقدّمه المستخدم (jpg أو png أو غيرهما).
-- **الأسلوب التجريدي**: إن لم يحدده المستخدم، اعرض الأساليب الستة بجملة
+- **الأسلوب التجريدي**: إن لم يحدده المستخدم، اعرض الأساليب السبعة بجملة
   واحدة لكل منها من `references/styles.md` واترك له الخيار.
 - **صيغة الإخراج**: PNG افتراضيًا، أو PDF إن أراد الطباعة.
 

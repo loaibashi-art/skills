@@ -95,7 +95,7 @@ def to_hex(color):
 
 
 # ---------------------------------------------------------------------------
-# الأساليب التجريدية الستة
+# الأساليب التجريدية السبعة
 # ---------------------------------------------------------------------------
 
 def style_geometric(src, palette, intensity, rng):
@@ -308,7 +308,7 @@ def style_flow(src, palette, intensity, rng):
     strips = max(8, int(18 + intensity * 60))
     phase = rng.uniform(0, 2 * math.pi)
     freq = rng.uniform(2.0, 4.5)
-    amp = w * 0.015 * (0.5 + intensity)
+    amp = w * 0.035 * (0.5 + intensity)
     out = np.empty_like(arr)
     bounds = np.linspace(0, h, strips + 1, dtype=int)
     for i in range(strips):
@@ -335,10 +335,65 @@ def style_flow(src, palette, intensity, rng):
     return ImageEnhance.Color(out_img).enhance(1.15 + intensity * 0.2)
 
 
+def sobel_edges(img, threshold=0.12):
+    """قناع حواف (0-1) بخوارزمية Sobel عبر numpy فقط — لإبراز زخارف اللوحة."""
+    g = np.asarray(img.convert("L"), dtype=np.float32) / 255.0
+    p = np.pad(g, 1, mode="edge")
+    gx = (-p[:-2, :-2] - 2 * p[1:-1, :-2] - p[2:, :-2]
+          + p[:-2, 2:] + 2 * p[1:-1, 2:] + p[2:, 2:])
+    gy = (-p[:-2, :-2] - 2 * p[:-2, 1:-1] - p[:-2, 2:]
+          + p[2:, :-2] + 2 * p[2:, 1:-1] + p[2:, 2:])
+    mag = np.sqrt(gx * gx + gy * gy)
+    mag /= (mag.max() + 1e-6)
+    return np.clip((mag - threshold) / (1.0 - threshold), 0.0, 1.0)
+
+
+def style_faceted(src, palette, intensity, rng):
+    """تجريد مُسطَّحي: مثلثات كبيرة مع الحفاظ على المعالم وإبراز الزخارف."""
+    w, h = src.size
+    sample = make_sampler(src)
+    # مثلثات كبيرة: الشدة الأعلى تعني مثلثات أكثر وأصغر
+    n = max(4, int(5 + intensity * 12))
+    pts = _triangle_grid(w, h, n, rng, jitter=0.30)
+    avg = tuple(int(c) for c in np.asarray(src, dtype=np.float32).reshape(-1, 3).mean(axis=0))
+    canvas = Image.new("RGB", (w, h), avg)
+    draw = ImageDraw.Draw(canvas)
+    edge = (25, 25, 25)
+    for i in range(n):
+        for j in range(n):
+            # تنويع اتجاه القطر عشوائيًا لكل خلية يعطي إيقاعًا عضويًا
+            if rng.random() < 0.5:
+                tris = [
+                    [pts[(i, j)], pts[(i + 1, j)], pts[(i, j + 1)]],
+                    [pts[(i + 1, j)], pts[(i + 1, j + 1)], pts[(i, j + 1)]],
+                ]
+            else:
+                tris = [
+                    [pts[(i, j)], pts[(i + 1, j)], pts[(i + 1, j + 1)]],
+                    [pts[(i, j)], pts[(i + 1, j + 1)], pts[(i, j + 1)]],
+                ]
+            for tri in tris:
+                cu = sum(p[0] for p in tri) / 3 / w
+                cv = sum(p[1] for p in tri) / 3 / h
+                # حدود رفيعة لكل مثلث تعطي القراءة البلورية للسطوح
+                draw.polygon(tri, fill=jitter_color(sample(cu, cv), rng, 0.04), outline=edge)
+    # مزج مع اللوحة الأصلية للحفاظ على المعالم والزخارف الدقيقة
+    keep = 0.55 - intensity * 0.30
+    blended = Image.blend(canvas, src, keep)
+    # إبراز حواف الزخارف الأصلية بخطوط داكنة رفيعة
+    mask = sobel_edges(src, threshold=0.15)
+    strength = 0.35 + intensity * 0.15
+    arr = np.asarray(blended, dtype=np.float32)
+    arr *= (1.0 - mask[..., None] * strength)
+    out = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+    return ImageEnhance.Color(out).enhance(1.08)
+
+
 STYLES = {
     "geometric": (style_geometric, "تجريد هندسي — فسيفساء لونية وشبكة جريئة"),
     "cubist": (style_cubist, "تجريد تكعيبي — تفتيت إلى مثلثات ومستويات"),
     "lowpoly": (style_lowpoly, "مضلّعات — تثليث نظيف بألوان اللوحة"),
+    "faceted": (style_faceted, "تجريد مُسطَّحي — مثلثات كبيرة مع زخارف واضحة"),
     "expressionist": (style_expressionist, "تجريد تعبيري — ضربات فرشاة جريئة"),
     "colorfield": (style_colorfield, "حقول اللون — نطاقات هادئة ضبابية"),
     "flow": (style_flow, "تجريد انسيابي — تموّجات ومنحنيات غنائية"),
